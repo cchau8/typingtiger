@@ -1,11 +1,11 @@
 import generateWords from "@/lib/randomizeWords";
-import Typer from "@/app/home/components/typer";
+import GameInterface from "@/app/home/components/GameInterface";
 
 export default async function Homepage() {
     const words = generateWords(42);
     return (
         <main className="w-screen h-screen flex justify-center items-center">
-            <Typer words={words} />
+            <GameInterface words={words} />
         </main>
     );
 }

@@ -7,18 +7,28 @@ import {
     useRef,
     useState,
 } from "react";
-import Word from "@/app/home/components/word";
+import Word from "@/app/home/components/Word";
+import { cn } from "@/lib/utils";
 
 type TyperProps = {
     words: string[];
+    startTyping: () => void;
+    typed: string[];
+    setTyped: (val: string[]) => void;
+    incrementCps: (charTyped: string, char: string) => void;
 };
 
-export default function Typer({ words }: TyperProps) {
+export default function Typer({
+    words,
+    startTyping,
+    typed,
+    setTyped,
+    incrementCps,
+}: TyperProps) {
     const [currentInput, setCurrentInput] = useState<string>("");
     const [currentIndex, setCurrentIndex] = useState<number>(0);
-    const [typed, setTyped] = useState<string[]>([]);
     const [isReverting, setIsReverting] = useState(false);
-
+    const [isFocused, setIsFocused] = useState<boolean>(false);
     const [caretStyle, setCaretStyle] = useState({
         top: 0,
         left: 0,
@@ -76,6 +86,19 @@ export default function Typer({ words }: TyperProps) {
      */
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
+        if (currentInput.length > 0 && currentIndex == 0) {
+            startTyping();
+        }
+
+        if (value.length >= currentInput.length) {
+            let compare: string = "";
+            if (value.length === words[currentIndex].length + 1) {
+                compare = " ";
+            } else if (value.length <= words[currentIndex].length) {
+                compare = words[currentIndex][value.length - 1];
+            }
+            incrementCps(value[value.length - 1], compare);
+        }
 
         if (value.endsWith(" ")) {
             if (value.trim().length === 0) return;
@@ -133,10 +156,10 @@ export default function Typer({ words }: TyperProps) {
         }
 
         setCaretStyle({
+            height: newHeight,
             top: newTop,
             left: newLeft,
             opacity: 1,
-            height: newHeight,
         });
     }, [currentInput, currentIndex, typed]);
 
@@ -146,6 +169,8 @@ export default function Typer({ words }: TyperProps) {
 
     let globalCharOffset = 0;
 
+    // useEffect(() => {}, [currentIndex, currentInput, startTyping]);
+
     return (
         <div
             className="w-full flex items-center flex-col select-none"
@@ -153,10 +178,13 @@ export default function Typer({ words }: TyperProps) {
         >
             <div
                 ref={wordsContainerRef}
-                className="relative flex gap-x-3 gap-y-4 max-w-4xl flex-wrap text-3xl tracking-wider font-mono justify-center"
+                className="relative flex gap-x-3 gap-y-4 max-w-[80%] flex-wrap text-3xl tracking-wider font-mono justify-center"
             >
                 <span
-                    className="absolute h-full w-0.5 bg-yellow-500"
+                    className={cn(
+                        "absolute h-full w-0.5 bg-gray-500",
+                        isFocused && "animate-pulse bg-yellow-500"
+                    )}
                     style={{
                         ...caretStyle,
                         transition: isReverting
@@ -211,6 +239,8 @@ export default function Typer({ words }: TyperProps) {
                 onChange={handleChange}
                 ref={inputRef}
                 onKeyDown={handleBackspace}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
             />
         </div>
     );

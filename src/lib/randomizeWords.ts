@@ -44,7 +44,8 @@ export function getRandomItems(arr: string[], n: number) {
 
 export default function generateWords(number: number): string[] {
     try {
-        const half = words.splice(0, 200);
+        const half = words.slice(0, 200);
+        console.log(half.length);
         const randomWords = getRandomItems(half, number);
         return randomWords;
     } catch (error) {
