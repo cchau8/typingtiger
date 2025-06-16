@@ -24,7 +24,15 @@ type StatsProps = {
     errors: number[];
 };
 
-const RenderErrorCross: FC<DotProps> = (props) => {
+interface CustomDotProps extends DotProps {
+    // The 'payload' object is passed by Recharts and contains the data for that point.
+    // We define its shape here. 'error' can be any type, e.g., boolean.
+    payload?: {
+        error?: boolean;
+    };
+}
+
+const RenderErrorCross: FC<CustomDotProps> = (props) => {
     const { cx, cy, payload } = props;
     const size = 2;
 
