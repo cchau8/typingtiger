@@ -130,12 +130,15 @@ export default function GameInterface({ words }: GameInterfaceProps) {
                 charHistory={charHistory}
                 rawCharHistory={rawCharHistory}
                 errors={errors}
+                // charHistory={defaultCharHistory}
+                // rawCharHistory={defaultRawCharHistory}
+                // errors={defaultErrors}
             />
         );
     }
 
     return (
-        <div className=" flex flex-col min-w-3xl  justify-center items-center gap-20">
+        <div className=" flex flex-col  max-w-[90%] justify-center items-center gap-20">
             <Time timer={timer} />
             <Typer
                 words={words}

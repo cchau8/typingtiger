@@ -241,6 +241,7 @@ export default function Typer({
                 onKeyDown={handleBackspace}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
+                autoCapitalize="off"
             />
         </div>
     );
