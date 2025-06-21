@@ -1,8 +1,9 @@
 "use client";
 
-import Stats from "@/app/home/components/Stats";
-import Time from "@/app/home/components/Time";
-import Typer from "@/app/home/components/Typer";
+import Stats from "@/app/components/Stats";
+import Time from "@/app/components/Time";
+import Typer from "@/app/components/Typer";
+import { useGameContext } from "@/context/gameContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type GameInterfaceProps = {
@@ -26,8 +27,9 @@ type GameState = "idle" | "running" | "finished";
 // const defaultWpm = 82;
 
 export default function GameInterface({ words }: GameInterfaceProps) {
+    const { time } = useGameContext();
     const [gameState, setGameState] = useState<GameState>("idle");
-    const [timer, setTimer] = useState<number>(30);
+    const [timer, setTimer] = useState<number>(time);
     const [typed, setTyped] = useState<string[]>([]);
     const [rawCharHistory, setRawCharHistory] = useState<number[]>([]);
     const [charHistory, setCharHistory] = useState<number[]>([]);
@@ -64,13 +66,18 @@ export default function GameInterface({ words }: GameInterfaceProps) {
     const incrementCps = useCallback((charTyped: string, char: string) => {
         // if (gameState === "running") {
         rawCpsRef.current += 1;
-        console.log(charTyped, char);
         if (charTyped === char) {
             cpsRef.current += 1;
         } else {
             errorsPerSecondRef.current += 1;
         }
     }, []);
+
+    useEffect(() => {
+        if (gameState !== "running") {
+            setTimer(time);
+        }
+    }, [gameState, time]);
 
     useEffect(() => {
         // Check if game is running
@@ -120,10 +127,9 @@ export default function GameInterface({ words }: GameInterfaceProps) {
     // }, [gameState, rawCharHistory]);
 
     if (gameState === "finished") {
-        // console.log(finalWpm);
-        console.log(rawCharHistory);
-        console.log(charHistory);
-        console.log(errors);
+        // console.log(rawCharHistory);
+        // console.log(charHistory);
+        // console.log(errors);
 
         return (
             <Stats
@@ -138,7 +144,7 @@ export default function GameInterface({ words }: GameInterfaceProps) {
     }
 
     return (
-        <div className=" flex flex-col  max-w-[90%] justify-center items-center gap-20">
+        <div className=" flex flex-col  mt-80  max-w-[90%] justify-center items-center gap-20">
             <Time timer={timer} />
             <Typer
                 words={words}
@@ -147,7 +153,7 @@ export default function GameInterface({ words }: GameInterfaceProps) {
                 setTyped={setTyped}
                 incrementCps={incrementCps}
             />
-            <span className="text-4xl font-bold text-gray-400">
+            <span className="text-4xl font-bold text-secondary">
                 {liveWpm} wpm
             </span>
         </div>

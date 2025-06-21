@@ -4,7 +4,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import ErrorCross from "@/components/ui/errorCross";
+import ErrorCross from "@/components/chart/errorCross";
 
 import {
     Area,
@@ -42,19 +42,33 @@ export default function StatsChart({ data }: StatsChartProps) {
     } satisfies ChartConfig;
 
     return (
-        <ChartContainer config={config} className="h-[300px] w-[100%]">
+        <ChartContainer config={config} className="h-[200px] w-[100%]">
             <ComposedChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" tickMargin={10}>
+                <XAxis dataKey="time" tickMargin={10}></XAxis>
+                <YAxis yAxisId="left" orientation="left" width={80}>
                     <Label
-                        value={"time"}
-                        offset={0}
-                        style={{ marginTop: 100 }}
-                        position={"centerBottom"}
+                        value={"words per minute"}
+                        position={"center"}
+                        fontSize={16}
+                        offset={25}
+                        angle={270}
                     ></Label>
-                </XAxis>
-                <YAxis yAxisId="left" orientation="left" label={"wpm"} />
-                <YAxis yAxisId="right" orientation="right" dataKey="error" />
+                </YAxis>
+                <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    dataKey="error"
+                    width={85}
+                >
+                    <Label
+                        value={"errors"}
+                        position={"center"}
+                        fontSize={16}
+                        offset={25}
+                        angle={90}
+                    ></Label>
+                </YAxis>
 
                 <Area
                     yAxisId="left"

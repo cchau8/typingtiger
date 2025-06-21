@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 type WordProps = {
     text: string;
@@ -22,7 +22,7 @@ export default function Word({
     // IF word not typed yet => grey
     if (state === "pending") {
         return (
-            <div className={cn("text-gray-500")}>
+            <div className={cn("text-secondary")}>
                 {text.split("").map((char, i) => (
                     <span key={i} className="border-l-2 border-transparent">
                         {char}
@@ -43,9 +43,9 @@ export default function Word({
                     let charClassName = "";
 
                     if (char == typedText[index]) {
-                        charClassName = "text-white";
+                        charClassName = "text-foreground";
                     } else if (index >= typedText.length) {
-                        charClassName = "text-gray-500";
+                        charClassName = "text-muted";
                     } else if (char !== typedText[index]) {
                         charClassName = "text-red-400";
                     }
@@ -87,12 +87,12 @@ export default function Word({
     return (
         <div className="relative">
             {text.split("").map((char, index) => {
-                let charClassName = "text-gray-500";
+                let charClassName = "text-secondary";
 
                 if (char == typedText[index]) {
-                    charClassName = "text-white";
+                    charClassName = "text-foreground";
                 } else if (index >= typedText.length) {
-                    charClassName = "text-gray-500";
+                    charClassName = "text-secondary";
                 } else if (char !== typedText[index]) {
                     charClassName = "text-red-400";
                 }

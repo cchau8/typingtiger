@@ -1,4 +1,4 @@
-import words from "@/lib/words/google-10000-english.json";
+import words from "@/lib/data/google-10000-english.json";
 
 /**
  * Shuffles an array in place and returns a new shuffled array.
@@ -45,7 +45,6 @@ export function getRandomItems(arr: string[], n: number) {
 export default function generateWords(number: number): string[] {
     try {
         const half = words.slice(0, 200);
-        console.log(half.length);
         const randomWords = getRandomItems(half, number);
         return randomWords;
     } catch (error) {

@@ -3,5 +3,5 @@ type TimeProps = {
 };
 
 export default function Time({ timer }: TimeProps) {
-    return <span className="text-4xl font-bold text-gray-400">{timer}</span>;
+    return <span className="text-4xl font-bold text-secondary">{timer}</span>;
 }

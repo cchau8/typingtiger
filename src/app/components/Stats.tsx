@@ -1,7 +1,7 @@
 "use client";
 
-import StatsChart from "@/app/home/components/StatsChart";
-import StatsNumber from "@/app/home/components/StatsNumbers";
+import StatsChart from "@/app/components/StatsChart";
+import StatsNumber from "@/app/components/StatsNumbers";
 
 type StatsProps = {
     charHistory: number[];
@@ -57,13 +57,27 @@ export default function Stats({
 
     return (
         <div className="min-w-[90%] flex flex-col items-start">
-            <span className="text-4xl font-bold text-gray-400">
-                wpm {calculateWpm(correctCharCount, 30)}
-            </span>
-            <span className="text-4xl font-bold text-gray-400">
-                acc {Math.round(accuracy * 10000) / 100} %
-            </span>
-            <StatsChart data={data} />
+            <div className="flex flex-row w-full items-stretch gap-2">
+                <div className="flex flex-col gap-5 ">
+                    <div className="flex flex-col">
+                        <span className="font text-2xl font-bold text-secondary">
+                            wpm
+                        </span>
+                        <span className="font-bold text-5xl text-accent">
+                            {calculateWpm(correctCharCount, 30)}
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font text-2xl font-bold text-secondary">
+                            acc
+                        </span>
+                        <span className="font-bold text-5xl text-accent text-nowrap">
+                            {Math.round(accuracy * 100)} %
+                        </span>
+                    </div>
+                </div>
+                <StatsChart data={data} />
+            </div>
 
             <StatsNumber
                 charCount={charCount}

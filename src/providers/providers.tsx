@@ -1,6 +1,7 @@
 "use client";
 
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { GameProvider } from "@/context/gameContext";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { SessionProvider } from "next-auth/react";
 import { ReactNode } from "react";
 
@@ -13,7 +14,7 @@ export function Providers({ children }: { children: ReactNode }) {
                 enableSystem
                 disableTransitionOnChange
             >
-                {children}
+                <GameProvider>{children}</GameProvider>
             </ThemeProvider>
         </SessionProvider>
     );

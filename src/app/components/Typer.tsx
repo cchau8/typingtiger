@@ -7,8 +7,8 @@ import {
     useRef,
     useState,
 } from "react";
-import Word from "@/app/home/components/Word";
-import { cn } from "@/lib/utils";
+import Word from "@/app/components/Word";
+import { cn } from "@/utils/cn";
 
 type TyperProps = {
     words: string[];
@@ -39,6 +39,25 @@ export default function Typer({
     const wordsContainerRef = useRef<HTMLDivElement>(null);
     const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        return () => {
+            // Clear refs on unmount
+            wordsContainerRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        setCurrentInput("");
+        setCurrentIndex(0);
+        setTyped([]);
+        setCaretStyle({
+            top: 0,
+            left: 0,
+            height: 0,
+            opacity: 0,
+        });
+    }, [words, setTyped]);
 
     const setInputFocus = () => {
         inputRef.current?.focus();
