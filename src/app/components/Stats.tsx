@@ -56,7 +56,7 @@ export default function Stats({
     });
 
     return (
-        <div className="min-w-[90%] flex flex-col items-start">
+        <div className="min-w-[90%] flex flex-col items-start mt-[25vh]">
             <div className="flex flex-row w-full items-stretch gap-2">
                 <div className="flex flex-col gap-5 ">
                     <div className="flex flex-col">

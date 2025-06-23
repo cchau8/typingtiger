@@ -9,6 +9,7 @@ import speeches from "@/lib/data/speeches.json";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDevMode } from "@/hooks/useDevMode";
 import { Button } from "@/components/ui/button";
+import GameHeader from "@/app/components/GameHeader";
 
 type GameState = "idle" | "running" | "finished";
 
@@ -142,20 +143,23 @@ export default function GameInterface() {
     }
 
     return (
-        <div className=" flex flex-col max-w-[90%] justify-center items-center gap-20">
-            <Time timer={timer} />
-            <Typer
-                words={words}
-                startTyping={startTyping}
-                typed={typed}
-                setTyped={setTyped}
-                incrementCps={incrementCps}
-            />
-            {isDevMode && (
-                <Button className="text-xl" onClick={handleSkipGame}>
-                    Skip
-                </Button>
-            )}
-        </div>
+        <>
+            <GameHeader />
+            <div className="flex flex-col justify-center items-center gap-20">
+                <Time timer={timer} />
+                <Typer
+                    words={words}
+                    startTyping={startTyping}
+                    typed={typed}
+                    setTyped={setTyped}
+                    incrementCps={incrementCps}
+                />
+                {isDevMode && (
+                    <Button className="text-xl" onClick={handleSkipGame}>
+                        Skip
+                    </Button>
+                )}
+            </div>
+        </>
     );
 }

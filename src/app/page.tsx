@@ -1,10 +1,8 @@
-import GameHeader from "@/app/components/GameHeader";
 import GameInterface from "@/app/components/GameInterface";
 
 export default function Home() {
     return (
-        <main className="flex flex-col justify-center items-center gap-60">
-            <GameHeader />
+        <main className="mx-auto flex flex-col max-w-[90%] h-[70vh] items-center gap-60">
             <GameInterface />
         </main>
     );
