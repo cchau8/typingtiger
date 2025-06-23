@@ -9,6 +9,7 @@ import {
 } from "react";
 import Word from "@/app/components/Word";
 import { cn } from "@/utils/cn";
+import { motion } from "motion/react";
 
 type TyperProps = {
     words: string[];
@@ -29,6 +30,9 @@ export default function Typer({
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const [isReverting, setIsReverting] = useState(false);
     const [isFocused, setIsFocused] = useState<boolean>(false);
+    const [scrollOffset, setScrollOffset] = useState<number>(0);
+    const [currentLine, setCurrentLine] = useState<number>(0);
+
     const [caretStyle, setCaretStyle] = useState({
         top: 0,
         left: 0,
@@ -39,6 +43,29 @@ export default function Typer({
     const wordsContainerRef = useRef<HTMLDivElement>(null);
     const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
+    const lineHeightRef = useRef<number>(0);
+
+    useEffect(() => {
+        const firstChar = charRefs.current[0];
+        if (firstChar && lineHeightRef.current === 0) {
+            const rect = firstChar.getBoundingClientRect();
+            lineHeightRef.current = rect.height + 16;
+        }
+    }, [charRefs.current[0]]);
+
+    const calculateCurrentLine = (caretTop: number): number => {
+        if (lineHeightRef.current === 0) return 0;
+        return Math.floor(caretTop / lineHeightRef.current);
+    };
+
+    const updateScrollOffset = (newLine: number) => {
+        if (newLine <= 1) {
+            setScrollOffset(0);
+            return;
+        }
+        const targetScrollOffset = (newLine - 1) * lineHeightRef.current;
+        setScrollOffset(targetScrollOffset);
+    };
 
     useEffect(() => {
         return () => {
@@ -51,6 +78,7 @@ export default function Typer({
         setCurrentInput("");
         setCurrentIndex(0);
         setTyped([]);
+        setScrollOffset(0);
         setCaretStyle({
             top: 0,
             left: 0,
@@ -174,13 +202,19 @@ export default function Typer({
             }
         }
 
+        const newLine = calculateCurrentLine(newTop);
+        if (newLine !== currentLine) {
+            setCurrentLine(newLine);
+            updateScrollOffset(newLine);
+        }
+
         setCaretStyle({
             height: newHeight,
             top: newTop,
             left: newLeft,
             opacity: 1,
         });
-    }, [currentInput, currentIndex, typed]);
+    }, [currentInput, currentIndex, typed, currentLine]);
 
     useEffect(() => {
         if (isReverting) setIsReverting(false);
@@ -192,17 +226,36 @@ export default function Typer({
 
     return (
         <div
-            className="w-full flex items-center flex-col select-none"
+            className={
+                "w-full flex items-center flex-col select-none overflow-hidden"
+            }
+            style={{
+                height:
+                    lineHeightRef.current > 0
+                        ? `${lineHeightRef.current * 3}px`
+                        : "192px",
+            }}
             onClick={setInputFocus}
         >
-            <div
+            <motion.div
+                animate={{ y: -scrollOffset }}
+                transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                    duration: 0.3,
+                }}
                 ref={wordsContainerRef}
                 className="relative flex gap-x-3 gap-y-4 max-w-[80%] flex-wrap text-3xl tracking-wider font-mono justify-center"
             >
                 <span
                     className={cn(
                         "absolute h-full w-0.5 bg-gray-500",
-                        isFocused && "animate-pulse bg-yellow-500"
+                        isFocused && "bg-yellow-500",
+                        isFocused &&
+                            currentIndex === 0 &&
+                            !currentInput &&
+                            "animate-pulse"
                     )}
                     style={{
                         ...caretStyle,
@@ -220,7 +273,6 @@ export default function Typer({
                             : "pending";
                     const currentGlobalOffset = globalCharOffset;
 
-                    // Increment offset for the next word. Use the typed length for accuracy.
                     if (wordState === "typed") {
                         globalCharOffset += typed[index].length;
                     } else if (wordState === "active") {
@@ -251,7 +303,7 @@ export default function Typer({
                         />
                     );
                 })}
-            </div>
+            </motion.div>
             <input
                 className="opacity-0 absolute"
                 value={currentInput}
