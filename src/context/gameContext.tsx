@@ -12,6 +12,8 @@ interface GameContextType {
     handleGameMode: (type: GameMode) => void;
 
     handleSetTime: (time: number) => void;
+    resetGame: () => void;
+    resetTrigger: number;
 }
 
 // Create context
@@ -25,6 +27,7 @@ interface GameProviderProps {
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const [gameMode, setGameMode] = useState<GameMode>("time");
     const [time, setTime] = useState<number>(30);
+    const [resetTrigger, setResetTrigger] = useState<number>(0);
 
     const handleGameMode = (type: GameMode) => {
         setGameMode(type);
@@ -33,12 +36,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const handleSetTime = (newTime: number) => {
         setTime(newTime);
     };
+    const resetGame = () => {
+        setResetTrigger((prev) => prev + 1);
+    };
 
     const value: GameContextType = {
         mode: gameMode,
         time,
         handleGameMode,
         handleSetTime,
+        resetGame,
+        resetTrigger,
     };
 
     return (

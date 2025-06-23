@@ -4,67 +4,61 @@ import Stats from "@/app/components/Stats";
 import Time from "@/app/components/Time";
 import Typer from "@/app/components/Typer";
 import { useGameContext } from "@/context/gameContext";
+import generateWords from "@/utils/wordGenerator";
+import speeches from "@/lib/data/speeches.json";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-type GameInterfaceProps = {
-    words: string[];
-};
+import { useDevMode } from "@/hooks/useDevMode";
+import { Button } from "@/components/ui/button";
 
 type GameState = "idle" | "running" | "finished";
 
-// const defaultCharHistory = [
-//     8, 8, 0, 4, 2, 6, 6, 5, 0, 7, 4, 2, 6, 7, 6, 7, 4, 4, 5, 6, 5, 4, 3, 3, 3,
-//     6, 7, 5, 3, 2,
-// ];
-// const defaultRawCharHistory = [
-//     10, 9, 4, 5, 3, 7, 8, 7, 5, 8, 6, 3, 8, 8, 8, 8, 5, 5, 6, 7, 6, 5, 4, 4, 4,
-//     7, 8, 6, 5, 3,
-// ];
-// const defaultErrors = [
-//     0, 0, 4, 0, 1, 0, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0,
-//     0, 0, 0, 1, 0,
-// ];
-// const defaultWpm = 82;
+const defaultCharHistory = [
+    8, 8, 0, 4, 2, 6, 6, 5, 0, 7, 4, 2, 6, 7, 6, 7, 4, 4, 5, 6, 5, 4, 3, 3, 3,
+    6, 7, 5, 3, 2,
+];
+const defaultRawCharHistory = [
+    10, 9, 4, 5, 3, 7, 8, 7, 5, 8, 6, 3, 8, 8, 8, 8, 5, 5, 6, 7, 6, 5, 4, 4, 4,
+    7, 8, 6, 5, 3,
+];
+const defaultErrors = [
+    0, 0, 4, 0, 1, 0, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0,
+    0, 0, 0, 1, 0,
+];
 
-export default function GameInterface({ words }: GameInterfaceProps) {
-    const { time } = useGameContext();
+export default function GameInterface() {
+    const { mode, time, resetTrigger } = useGameContext();
+    const { isDevMode } = useDevMode();
     const [gameState, setGameState] = useState<GameState>("idle");
     const [timer, setTimer] = useState<number>(time);
     const [typed, setTyped] = useState<string[]>([]);
     const [rawCharHistory, setRawCharHistory] = useState<number[]>([]);
     const [charHistory, setCharHistory] = useState<number[]>([]);
     const [errors, setErrors] = useState<number[]>([]);
-
+    const [words, setWords] = useState<string[]>([]);
     const rawCpsRef = useRef(0);
     const cpsRef = useRef(0);
     const errorsPerSecondRef = useRef(0);
-    const [liveWpm, setLiveWpm] = useState<number>(0);
-    // const [finalWpm, setFinalWpm] = useState<number>(0);
+    const [skipGame, setSkipGame] = useState<boolean>(false);
 
     const startTyping = useCallback(() => {
         setGameState("running");
         setTyped([]);
     }, []);
 
-    // const resetGame = () => {
-    //     setTimer(30);
-    //     setLiveWpm(0);
-    //     setCps(0);
-    //     setCharHistory([]);
-    //     setFinalWpm(0);
-    // };
+    const resetGame = useCallback(() => {
+        setGameState("idle");
+        setTimer(time);
+        setTyped([]);
+        setCharHistory([]);
+        setRawCharHistory([]);
+        setErrors([]);
+    }, [time]);
 
-    const calculateWpm = (charCount: number, seconds: number) => {
-        if (seconds === 0 || charCount === 0) {
-            return 0;
-        }
-        const wordsTyped = charCount / 5;
-        const minutes = seconds / 60;
-        return Math.round(wordsTyped / minutes);
+    const handleSkipGame = () => {
+        setSkipGame(true);
     };
 
     const incrementCps = useCallback((charTyped: string, char: string) => {
-        // if (gameState === "running") {
         rawCpsRef.current += 1;
         if (charTyped === char) {
             cpsRef.current += 1;
@@ -74,10 +68,29 @@ export default function GameInterface({ words }: GameInterfaceProps) {
     }, []);
 
     useEffect(() => {
+        if (mode == "time") {
+            const newWords = generateWords(180);
+            setWords(newWords);
+        } else if (mode == "quote") {
+            const random = Math.floor(Math.random() * speeches.length);
+            const newWords = speeches[random].value.split(" ");
+            setWords(newWords);
+        }
+    }, [mode, time, resetTrigger]);
+
+    useEffect(() => {
         if (gameState !== "running") {
             setTimer(time);
         }
     }, [gameState, time]);
+
+    useEffect(() => {
+        if (skipGame) {
+            setGameState("finished");
+        }
+    }, [skipGame]);
+
+    useEffect(() => resetGame(), [resetGame, resetTrigger]);
 
     useEffect(() => {
         // Check if game is running
@@ -86,17 +99,18 @@ export default function GameInterface({ words }: GameInterfaceProps) {
         }
         // Countdown to decrement timer every second and :
         // - add character count each seconds
-        // - update live wpm
         // On finish => set game to finish
         const countdown = setInterval(() => {
             const currentCps = cpsRef.current;
             const currentRawCps = rawCpsRef.current;
             const currentErrors = errorsPerSecondRef.current;
-            setLiveWpm(calculateWpm(currentCps, 1));
+
             setRawCharHistory((prevHistory) => [...prevHistory, currentRawCps]);
             setCharHistory((prevHistory) => [...prevHistory, currentCps]);
             setErrors((prevErrors) => [...prevErrors, currentErrors]);
-            rawCpsRef.current = 0; // Reset counter for the next second
+
+            // Reset counter for the next second
+            rawCpsRef.current = 0;
             cpsRef.current = 0;
             errorsPerSecondRef.current = 0;
 
@@ -115,36 +129,20 @@ export default function GameInterface({ words }: GameInterfaceProps) {
         };
     }, [gameState]);
 
-    // useEffect(() => {
-    //     if (gameState === "finished") {
-    //         const totalChars = rawCharHistory.reduce(
-    //             (sum, count) => sum + count,
-    //             0
-    //         );
-
-    //         setFinalWpm(calculateWpm(totalChars, 30));
-    //     }
-    // }, [gameState, rawCharHistory]);
-
     if (gameState === "finished") {
-        // console.log(rawCharHistory);
-        // console.log(charHistory);
-        // console.log(errors);
-
         return (
             <Stats
-                charHistory={charHistory}
-                rawCharHistory={rawCharHistory}
-                errors={errors}
-                // charHistory={defaultCharHistory}
-                // rawCharHistory={defaultRawCharHistory}
-                // errors={defaultErrors}
+                charHistory={skipGame ? defaultCharHistory : charHistory}
+                rawCharHistory={
+                    skipGame ? defaultRawCharHistory : rawCharHistory
+                }
+                errors={skipGame ? defaultErrors : errors}
             />
         );
     }
 
     return (
-        <div className=" flex flex-col  mt-80  max-w-[90%] justify-center items-center gap-20">
+        <div className=" flex flex-col max-w-[90%] justify-center items-center gap-20">
             <Time timer={timer} />
             <Typer
                 words={words}
@@ -153,9 +151,11 @@ export default function GameInterface({ words }: GameInterfaceProps) {
                 setTyped={setTyped}
                 incrementCps={incrementCps}
             />
-            <span className="text-4xl font-bold text-secondary">
-                {liveWpm} wpm
-            </span>
+            {isDevMode && (
+                <Button className="text-xl" onClick={handleSkipGame}>
+                    Skip
+                </Button>
+            )}
         </div>
     );
 }
