@@ -313,6 +313,7 @@ export default function Typer({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 autoCapitalize="off"
+                autoComplete="off"
             />
         </div>
     );
