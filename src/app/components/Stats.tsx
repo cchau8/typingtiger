@@ -2,12 +2,14 @@
 
 import StatsChart from "@/app/components/StatsChart";
 import StatsNumber from "@/app/components/StatsNumbers";
+import { GameMode } from "@/types/gameTypes";
 
 type StatsProps = {
     charHistory: number[];
     rawCharHistory: number[];
     errors: number[];
-    time?: number;
+    time: number;
+    mode: GameMode;
 };
 
 export default function Stats({
@@ -15,7 +17,9 @@ export default function Stats({
     rawCharHistory,
     errors,
     time,
+    mode,
 }: StatsProps) {
+    console.log(charHistory, rawCharHistory, errors, time);
     const charCount = rawCharHistory.reduce((el, acc) => (acc += el));
     const correctCharCount = charHistory.reduce((el, acc) => (acc += el));
     const errorCount = errors.reduce((el, acc) => (acc += el));
@@ -64,7 +68,7 @@ export default function Stats({
                             wpm
                         </span>
                         <span className="font-bold text-5xl text-accent">
-                            {calculateWpm(correctCharCount, 30)}
+                            {calculateWpm(correctCharCount, time)}
                         </span>
                     </div>
                     <div className="flex flex-col">
@@ -83,6 +87,7 @@ export default function Stats({
                 charCount={charCount}
                 consistency={calcConsistency(rawCharHistory)}
                 time={time}
+                mode={mode}
             />
         </div>
     );

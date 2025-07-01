@@ -1,143 +1,220 @@
 "use client";
 
 import Stats from "@/app/components/Stats";
-import Time from "@/app/components/Time";
-import Typer from "@/app/components/Typer";
+import Typer from "@/app/components/Typer/Typer";
 import { useGameContext } from "@/context/gameContext";
-import generateWords from "@/utils/wordGenerator";
-import speeches from "@/lib/data/speeches.json";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useDevMode } from "@/hooks/useDevMode";
 import { Button } from "@/components/ui/button";
-import GameHeader from "@/app/components/GameHeader";
+import GameHeader from "@/app/components/Header/GameHeader";
+import { GameModeStrategy } from "@/strategies/gameStrategies";
+import { createTimeModeStrategy } from "@/strategies/timeModeStrategy";
+import { GameEndConditionData } from "@/types/gameTypes";
+import { useGameStats } from "@/hooks/useGameStats";
+import { createQuoteModeStrategy } from "@/strategies/quoteModeStrategy";
+import { createWordModeStrategy } from "@/strategies/wordModeStrategy";
+import { AnimatePresence, motion } from "motion/react";
+import WordCountDisplay from "@/app/components/GameInfo/WordCountDisplay";
+import TimeDisplay from "@/app/components/GameInfo/TimeDisplay";
 
-type GameState = "idle" | "running" | "finished";
-
-const defaultCharHistory = [
-    8, 8, 0, 4, 2, 6, 6, 5, 0, 7, 4, 2, 6, 7, 6, 7, 4, 4, 5, 6, 5, 4, 3, 3, 3,
-    6, 7, 5, 3, 2,
-];
-const defaultRawCharHistory = [
-    10, 9, 4, 5, 3, 7, 8, 7, 5, 8, 6, 3, 8, 8, 8, 8, 5, 5, 6, 7, 6, 5, 4, 4, 4,
-    7, 8, 6, 5, 3,
-];
-const defaultErrors = [
-    0, 0, 4, 0, 1, 0, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 1, 0,
-];
+interface GameConfig {
+    initialTimer: number;
+    words: string[];
+}
 
 export default function GameInterface() {
-    const { mode, time, resetTrigger } = useGameContext();
+    const { mode, time, resetTrigger, gameState, handleGameState, wordCount } =
+        useGameContext();
+    const {
+        rawCharHistory,
+        charHistory,
+        errors,
+        resetStats,
+        recordSecond,
+        handleSkipGame,
+        skipGame,
+        incrementCps,
+        finalizeStats,
+    } = useGameStats();
     const { isDevMode } = useDevMode();
-    const [gameState, setGameState] = useState<GameState>("idle");
-    const [timer, setTimer] = useState<number>(time);
-    const [typed, setTyped] = useState<string[]>([]);
-    const [rawCharHistory, setRawCharHistory] = useState<number[]>([]);
-    const [charHistory, setCharHistory] = useState<number[]>([]);
-    const [errors, setErrors] = useState<number[]>([]);
-    const [words, setWords] = useState<string[]>([]);
-    const rawCpsRef = useRef(0);
-    const cpsRef = useRef(0);
-    const errorsPerSecondRef = useRef(0);
-    const [skipGame, setSkipGame] = useState<boolean>(false);
+    const [typedWordCount, setTypedWordCount] = useState<number>(0);
 
-    const startTyping = useCallback(() => {
-        setGameState("running");
-        setTyped([]);
+    const [timer, setTimer] = useState<number>(time);
+    const [words, setWords] = useState<string[]>([]);
+
+    const typedRef = useRef<string[]>([]);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const strategy = useMemo((): GameModeStrategy => {
+        switch (mode) {
+            case "time":
+                return createTimeModeStrategy(time);
+            case "quote":
+                return createQuoteModeStrategy();
+            case "words":
+                return createWordModeStrategy(wordCount);
+            default:
+                return createTimeModeStrategy(time);
+        }
+    }, [mode, time, wordCount]);
+
+    const strategyRef = useRef(strategy);
+    strategyRef.current = strategy;
+
+    const initializeGame = useCallback((): GameConfig => {
+        return strategy.initializeGame();
+    }, [strategy]);
+    const checkEndGame = useCallback(() => {
+        if (gameState !== "running") return false;
+
+        const currentState: GameEndConditionData = {
+            timer,
+            typed: typedRef.current,
+            gameState: "running",
+            wordCount: typedRef.current.length,
+            words,
+        };
+
+        if (strategyRef.current.shouldEndGame(currentState)) {
+            handleGameState("finished");
+            finalizeStats();
+            return true;
+        }
+        return false;
+    }, [gameState, timer, words, handleGameState, finalizeStats]);
+
+    const stopGameTimer = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
     }, []);
+
+    const startGameTimer = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        intervalRef.current = setInterval(() => {
+            if (checkEndGame()) {
+                return;
+            }
+
+            recordSecond();
+
+            setTimer((prevTimer) => {
+                const newTimer = strategyRef.current.updateTimer(prevTimer);
+
+                setTimeout(() => {
+                    const currentState: GameEndConditionData = {
+                        timer: newTimer,
+                        typed: typedRef.current,
+                        gameState: "running",
+                        wordCount: typedRef.current.length,
+                        words,
+                    };
+
+                    if (strategyRef.current.shouldEndGame(currentState)) {
+                        handleGameState("finished");
+                        finalizeStats();
+                    }
+                }, 0);
+
+                return newTimer;
+            });
+        }, 1000);
+    }, [recordSecond, checkEndGame, words, handleGameState, finalizeStats]);
 
     const resetGame = useCallback(() => {
-        setGameState("idle");
-        setTimer(time);
-        setTyped([]);
-        setCharHistory([]);
-        setRawCharHistory([]);
-        setErrors([]);
-    }, [time]);
+        const config = initializeGame();
+        setTimer(config.initialTimer);
+        typedRef.current = [];
+        setWords(config.words);
+        stopGameTimer();
 
-    const handleSkipGame = () => {
-        setSkipGame(true);
-    };
+        resetStats();
+        handleGameState("idle");
+    }, [initializeGame, resetStats, stopGameTimer, handleGameState]);
 
-    const incrementCps = useCallback((charTyped: string, char: string) => {
-        rawCpsRef.current += 1;
-        if (charTyped === char) {
-            cpsRef.current += 1;
+    const startTyping = useCallback(() => {
+        if (gameState === "idle") {
+            handleGameState("running");
+        }
+    }, [gameState, handleGameState]);
+
+    const handleWordComplete = useCallback(() => {
+        setTypedWordCount(typedRef.current.length);
+        checkEndGame();
+    }, [checkEndGame]);
+
+    useEffect(() => {
+        const config = initializeGame();
+        setTimer(config.initialTimer);
+        setWords(config.words);
+    }, [mode, time, initializeGame]);
+
+    useEffect(() => {
+        if (resetTrigger > 0) {
+            resetGame();
+        }
+    }, [resetTrigger, resetGame]);
+
+    useEffect(() => {
+        if (gameState === "running") {
+            startGameTimer();
         } else {
-            errorsPerSecondRef.current += 1;
+            stopGameTimer();
         }
-    }, []);
+
+        return () => {
+            stopGameTimer();
+        };
+    }, [gameState, startGameTimer, stopGameTimer]);
 
     useEffect(() => {
-        if (mode == "time") {
-            const newWords = generateWords(180);
-            setWords(newWords);
-        } else if (mode == "quote") {
-            const random = Math.floor(Math.random() * speeches.length);
-            const newWords = speeches[random].value.split(" ");
-            setWords(newWords);
-        }
-    }, [mode, time, resetTrigger]);
+        if (gameState !== "running") return;
 
-    useEffect(() => {
-        if (gameState !== "running") {
-            setTimer(time);
+        const currentState: GameEndConditionData = {
+            timer,
+            typed: typedRef.current,
+            gameState: "running",
+            wordCount: typedRef.current.length,
+            words,
+        };
+
+        if (strategy.shouldEndGame(currentState)) {
+            handleGameState("finished");
+            finalizeStats();
         }
-    }, [gameState, time]);
+    }, [timer, gameState, strategy, handleGameState, finalizeStats, words]);
 
     useEffect(() => {
         if (skipGame) {
-            setGameState("finished");
+            stopGameTimer();
+            handleGameState("finished");
         }
-    }, [skipGame]);
-
-    useEffect(() => resetGame(), [resetGame, resetTrigger]);
+    }, [skipGame, stopGameTimer, handleGameState]);
 
     useEffect(() => {
-        // Check if game is running
-        if (gameState != "running") {
-            return;
-        }
-        // Countdown to decrement timer every second and :
-        // - add character count each seconds
-        // On finish => set game to finish
-        const countdown = setInterval(() => {
-            const currentCps = cpsRef.current;
-            const currentRawCps = rawCpsRef.current;
-            const currentErrors = errorsPerSecondRef.current;
-
-            setRawCharHistory((prevHistory) => [...prevHistory, currentRawCps]);
-            setCharHistory((prevHistory) => [...prevHistory, currentCps]);
-            setErrors((prevErrors) => [...prevErrors, currentErrors]);
-
-            // Reset counter for the next second
-            rawCpsRef.current = 0;
-            cpsRef.current = 0;
-            errorsPerSecondRef.current = 0;
-
-            setTimer((prevTimer) => {
-                const newTime = prevTimer - 1;
-                if (newTime <= 0) {
-                    setGameState("finished");
-                    return 0;
-                }
-                return newTime;
-            });
-        }, 1000);
-
         return () => {
-            clearInterval(countdown);
+            stopGameTimer();
         };
-    }, [gameState]);
-
+    }, [stopGameTimer]);
+    const getAnimationKey = useCallback(() => {
+        if (mode === "time") {
+            return `time-${time}-${words.slice(0, 12).join("-")}`;
+        } else {
+            return `words-${wordCount}-${words.slice(0, 12).join("-")}`;
+        }
+    }, [mode, time, wordCount, words]);
     if (gameState === "finished") {
         return (
             <Stats
-                charHistory={skipGame ? defaultCharHistory : charHistory}
-                rawCharHistory={
-                    skipGame ? defaultRawCharHistory : rawCharHistory
-                }
-                errors={skipGame ? defaultErrors : errors}
+                charHistory={charHistory}
+                rawCharHistory={rawCharHistory}
+                errors={errors}
+                time={timer}
+                mode={mode}
             />
         );
     }
@@ -145,15 +222,38 @@ export default function GameInterface() {
     return (
         <>
             <GameHeader />
-            <div className="flex flex-col justify-center items-center gap-20">
-                <Time timer={timer} />
-                <Typer
-                    words={words}
-                    startTyping={startTyping}
-                    typed={typed}
-                    setTyped={setTyped}
-                    incrementCps={incrementCps}
-                />
+            <div className="flex flex-col items-center justify-start gap-20">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={getAnimationKey()}
+                        className="flex flex-col items-center justify-start gap-20"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                            duration: 0.2,
+                            ease: "easeInOut",
+                        }}
+                    >
+                        {mode === "time" ? (
+                            <TimeDisplay timer={timer} />
+                        ) : (
+                            <WordCountDisplay
+                                count={typedWordCount}
+                                target={words.length}
+                            />
+                        )}
+
+                        <Typer
+                            words={words}
+                            startTyping={startTyping}
+                            typedRef={typedRef}
+                            incrementCps={incrementCps}
+                            gameState={gameState}
+                            onWordComplete={handleWordComplete}
+                        />
+                    </motion.div>
+                </AnimatePresence>
                 {isDevMode && (
                     <Button className="text-xl" onClick={handleSkipGame}>
                         Skip

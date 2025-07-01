@@ -1,18 +1,25 @@
+import { GameMode } from "@/types/gameTypes";
 import { useMemo } from "react";
 
 type StatsNumberProps = {
     charCount: number;
     consistency: number;
     time?: number;
+    mode: GameMode;
 };
 
 export default function StatsNumber({
     charCount,
     consistency,
     time = 30,
+    mode,
 }: StatsNumberProps) {
     const data = useMemo(() => {
         return [
+            {
+                label: "mode",
+                value: mode,
+            },
             {
                 label: "raw",
                 value: charCount,

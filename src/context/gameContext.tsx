@@ -1,25 +1,30 @@
-// contexts/GameContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-
-// Types
-export type GameMode = "time" | "quote";
+import { GameMode, GameState } from "@/types/gameTypes";
+import React, {
+    createContext,
+    useContext,
+    useState,
+    ReactNode,
+    useCallback,
+    useMemo,
+} from "react";
 
 interface GameContextType {
     mode: GameMode;
     time: number;
+    wordCount: number;
+    gameState: GameState;
     handleGameMode: (type: GameMode) => void;
-
-    handleSetTime: (time: number) => void;
+    handleGameState: (state: GameState) => void;
     resetGame: () => void;
+    handleSetTime: (time: number) => void;
+    handleSetWordCount: (wordCount: number) => void;
     resetTrigger: number;
 }
 
-// Create context
 const GameContext = createContext<GameContextType | null>(null);
 
-// Provider
 interface GameProviderProps {
     children: ReactNode;
 }
@@ -27,34 +32,69 @@ interface GameProviderProps {
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const [gameMode, setGameMode] = useState<GameMode>("time");
     const [time, setTime] = useState<number>(30);
+    const [wordCount, setWordCount] = useState<number>(10);
     const [resetTrigger, setResetTrigger] = useState<number>(0);
+    const [gameState, setGameState] = useState<GameState>("idle");
 
-    const handleGameMode = (type: GameMode) => {
+    const handleGameMode = useCallback((type: GameMode) => {
         setGameMode(type);
-    };
+    }, []);
 
-    const handleSetTime = (newTime: number) => {
-        setTime(newTime);
-    };
-    const resetGame = () => {
+    const handleSetTime = useCallback(
+        (newTime: number) => {
+            setTime((prevTime) => {
+                if (gameMode === "time") {
+                    return newTime;
+                }
+                return prevTime;
+            });
+        },
+        [gameMode]
+    );
+
+    const handleGameState = useCallback((state: GameState) => {
+        setGameState(state);
+    }, []);
+    const handleSetWordCount = useCallback((newWordCount: number) => {
+        setWordCount(newWordCount);
+    }, []);
+
+    const resetGame = useCallback(() => {
         setResetTrigger((prev) => prev + 1);
-    };
+    }, []);
 
-    const value: GameContextType = {
-        mode: gameMode,
-        time,
-        handleGameMode,
-        handleSetTime,
-        resetGame,
-        resetTrigger,
-    };
+    const value = useMemo<GameContextType>(
+        () => ({
+            mode: gameMode,
+            time,
+            wordCount,
+            gameState,
+            handleGameMode,
+            handleSetTime,
+            handleSetWordCount,
+            handleGameState,
+            resetGame,
+            resetTrigger,
+        }),
+        [
+            gameMode,
+            time,
+            wordCount,
+            gameState,
+            resetTrigger,
+            handleGameMode,
+            handleSetTime,
+            handleSetWordCount,
+            handleGameState,
+            resetGame,
+        ]
+    );
 
     return (
         <GameContext.Provider value={value}>{children}</GameContext.Provider>
     );
 };
 
-// Custom hook
 export const useGameContext = (): GameContextType => {
     const context = useContext(GameContext);
     if (context === null) {
