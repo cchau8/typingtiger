@@ -213,7 +213,7 @@ export default function GameInterface() {
                 charHistory={charHistory}
                 rawCharHistory={rawCharHistory}
                 errors={errors}
-                time={timer}
+                time={strategy.getTimerBehavior() === "countup" ? timer : time}
                 mode={mode}
             />
         );
