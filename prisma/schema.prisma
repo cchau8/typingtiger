@@ -7,15 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id            String   @id @default(cuid())
   name          String?
   email         String?  @unique
   emailVerified DateTime?
   image         String?
+  role          Role     @default(USER)
   accounts      Account[]
   sessions      Session[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
 }
+
 
 model Account {
   id                 String  @id @default(cuid())
@@ -51,4 +60,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum QuoteLength {
+  SHORT
+  MEDIUM
+  LONG
+  THICC
+}
+model Quotes {
+  id Int @id @default(autoincrement())
+  source String
+  value String
+  length QuoteLength
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }

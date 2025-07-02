@@ -1,7 +1,7 @@
 import DarkModeToggle from "@/components/header/DarkModeToggle";
-import LogoutButton from "@/components/auth/LogoutButton";
 import GoToGameButton from "@/components/header/GoToGameButton";
 import DevModeToggle from "@/components/header/DevModeToggle";
+import AccountButton from "@/components/auth/AccountButton";
 
 const Header = () => (
     <header className="m-10 flex justify-between">
@@ -12,7 +12,7 @@ const Header = () => (
         <div className="flex gap-2">
             <DevModeToggle />
             <DarkModeToggle />
-            <LogoutButton />
+            <AccountButton />
         </div>
     </header>
 );
