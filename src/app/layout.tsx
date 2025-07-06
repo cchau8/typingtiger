@@ -3,7 +3,7 @@ import "./globals.css";
 import { neueRegrade } from "@/lib/fonts";
 import { Providers } from "@/providers/providers";
 
-import Header from "@/app/components/Header";
+import HeaderWrapper from "@/app/components/HeaderWrapper";
 
 export const metadata: Metadata = {
     title: "TypingTiger",
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
     icons: {
         icon: [
             {
-                url: "/favicon.ico", // /public path
-                href: "/favicon.ico", // /public path
+                url: "/favicon.ico",
+                href: "/favicon.ico",
             },
         ],
     },
@@ -32,7 +32,7 @@ export default function RootLayout({
         >
             <body suppressHydrationWarning>
                 <Providers>
-                    <Header />
+                    <HeaderWrapper />
 
                     {children}
                 </Providers>

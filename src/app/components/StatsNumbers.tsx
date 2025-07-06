@@ -35,7 +35,7 @@ export default function StatsNumber({
         ];
     }, [charCount, consistency, time]);
     return (
-        <div className="flex flex-row gap-10 justify-center">
+        <div className="flex mt-8 w-4/5 flex-row gap-10 justify-between">
             {data.map(({ label, value }, i) => (
                 <div className="flex flex-col" key={`data-${i}`}>
                     <span className="font text-xl">{label}</span>

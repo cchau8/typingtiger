@@ -8,6 +8,7 @@ import React, {
     ReactNode,
     useCallback,
     useMemo,
+    useEffect,
 } from "react";
 
 interface GameContextType {
@@ -32,7 +33,7 @@ interface GameProviderProps {
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const [gameMode, setGameMode] = useState<GameMode>("time");
     const [time, setTime] = useState<number>(30);
-    const [wordCount, setWordCount] = useState<number>(10);
+    const [wordCount, setWordCount] = useState<number>(25);
     const [resetTrigger, setResetTrigger] = useState<number>(0);
     const [gameState, setGameState] = useState<GameState>("idle");
 
@@ -62,6 +63,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const resetGame = useCallback(() => {
         setResetTrigger((prev) => prev + 1);
     }, []);
+
+    useEffect(() => {
+        resetGame();
+    }, [resetGame, time, wordCount]);
 
     const value = useMemo<GameContextType>(
         () => ({

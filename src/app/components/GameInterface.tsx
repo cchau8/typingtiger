@@ -131,7 +131,7 @@ export default function GameInterface() {
         typedRef.current = [];
         setWords(config.words);
         stopGameTimer();
-
+        setTypedWordCount(0);
         resetStats();
         handleGameState("idle");
     }, [initializeGame, resetStats, stopGameTimer, handleGameState]);
@@ -157,7 +157,7 @@ export default function GameInterface() {
         if (resetTrigger > 0) {
             resetGame();
         }
-    }, [resetTrigger, resetGame]);
+    }, [resetTrigger, resetGame, mode]);
 
     useEffect(() => {
         if (gameState === "running") {
@@ -200,6 +200,7 @@ export default function GameInterface() {
             stopGameTimer();
         };
     }, [stopGameTimer]);
+
     const getAnimationKey = useCallback(() => {
         if (mode === "time") {
             return `time-${time}-${words.slice(0, 12).join("-")}`;
@@ -207,6 +208,7 @@ export default function GameInterface() {
             return `words-${wordCount}-${words.slice(0, 12).join("-")}`;
         }
     }, [mode, time, wordCount, words]);
+
     if (gameState === "finished") {
         return (
             <Stats
